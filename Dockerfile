@@ -13,7 +13,7 @@ RUN echo deb http://us.archive.ubuntu.com/ubuntu/ $(lsb_release -cs) universe mu
   apt-get -y upgrade
 
 # Install dependencies
-RUN apt-get install -y -y build-essential zlib1g-dev libyaml-dev libssl-dev libgdbm-dev libreadline-dev libncurses5-dev libffi-dev curl git-core openssh-server redis-server checkinstall libxml2-dev libxslt-dev libcurl4-openssl-dev libicu-dev logrotate python-software-properties libpq-dev 
+RUN apt-get install -y -y build-essential zlib1g-dev libyaml-dev libssl-dev libgdbm-dev libreadline-dev libncurses5-dev libffi-dev curl git-core openssh-server redis-server checkinstall libxml2-dev libxslt-dev libcurl4-openssl-dev libicu-dev logrotate python-software-properties libpq-dev sudo 
 
 # Install Git
 RUN add-apt-repository -y ppa:git-core/ppa;\
