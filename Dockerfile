@@ -1,10 +1,11 @@
-FROM ubuntu:12.04
-ENV MYSQLTMPROOT temprootpass
+FROM ubuntu
+
+RUN apt-get update; apt-get -y install lsb-release
 
 # Run upgrades
-RUN echo deb http://us.archive.ubuntu.com/ubuntu/ precise universe multiverse >> /etc/apt/sources.list;\
-  echo deb http://us.archive.ubuntu.com/ubuntu/ precise-updates main restricted universe >> /etc/apt/sources.list;\
-  echo deb http://security.ubuntu.com/ubuntu precise-security main restricted universe >> /etc/apt/sources.list;\
+RUN echo deb http://us.archive.ubuntu.com/ubuntu/ $(lsb_release -cs) universe multiverse >> /etc/apt/sources.list;\
+  echo deb http://us.archive.ubuntu.com/ubuntu/ $(lsb_release -cs)-updates main restricted universe >> /etc/apt/sources.list;\
+  echo deb http://security.ubuntu.com/ubuntu $(lsb_release -cs)-security main restricted universe >> /etc/apt/sources.list;\
   echo udev hold | dpkg --set-selections;\
   echo initscripts hold | dpkg --set-selections;\
   echo upstart hold | dpkg --set-selections;\
@@ -12,7 +13,7 @@ RUN echo deb http://us.archive.ubuntu.com/ubuntu/ precise universe multiverse >>
   apt-get -y upgrade
 
 # Install dependencies
-RUN apt-get install -y build-essential zlib1g-dev libyaml-dev libssl-dev libgdbm-dev libreadline-dev libncurses5-dev libffi-dev curl openssh-server redis-server checkinstall libxml2-dev libxslt-dev libcurl4-openssl-dev libicu-dev sudo python python-docutils python-software-properties nginx
+RUN apt-get install -y -y build-essential zlib1g-dev libyaml-dev libssl-dev libgdbm-dev libreadline-dev libncurses5-dev libffi-dev curl git-core openssh-server redis-server checkinstall libxml2-dev libxslt-dev libcurl4-openssl-dev libicu-dev logrotate python-software-properties libpq-dev 
 
 # Install Git
 RUN add-apt-repository -y ppa:git-core/ppa;\
@@ -37,21 +38,16 @@ RUN adduser --disabled-login --gecos 'GitLab' git
 RUN cd /home/git;\
   su git -c "git clone https://github.com/gitlabhq/gitlab-shell.git";\
   cd gitlab-shell;\
-  su git -c "git checkout v1.7.1";\
+  su git -c "git checkout v1.7.4";\
   su git -c "cp config.yml.example config.yml";\
   sed -i -e 's/localhost/127.0.0.1/g' config.yml;\
   su git -c "./bin/install"
-
-# Install MySQL
-RUN echo mysql-server mysql-server/root_password password $MYSQLTMPROOT | debconf-set-selections;\
-  echo mysql-server mysql-server/root_password_again password $MYSQLTMPROOT | debconf-set-selections;\
-  apt-get install -y mysql-server mysql-client libmysqlclient-dev
 
 # Install GitLab
 RUN cd /home/git;\
   su git -c "git clone https://github.com/gitlabhq/gitlabhq.git gitlab";\
   cd /home/git/gitlab;\
-  su git -c "git checkout 6-1-stable"
+  su git -c "git checkout 6-2-stable"
 
 # Misc configuration stuff
 RUN cd /home/git/gitlab;\
@@ -67,13 +63,15 @@ RUN cd /home/git/gitlab;\
   su git -c "mkdir public/uploads";\
   chmod -R u+rwX public/uploads;\
   su git -c "cp config/unicorn.rb.example config/unicorn.rb";\
+  su git -c "cp config/initializers/rack_attack.rb.example config/initializers/rack_attack.rb";\
+  su git -c 'sed -e "s/# config.middleware.use Rack::Attack/config.middleware.use Rack::Attack/" config/application.rb';\
   su git -c "git config --global user.name 'GitLab'";\
   su git -c "git config --global user.email 'gitlab@localhost'";\
   su git -c "git config --global core.autocrlf input"
 
 RUN cd /home/git/gitlab;\
   gem install charlock_holmes --version '0.6.9.4';\
-  su git -c "bundle install --deployment --without development test postgres aws"
+  su git -c "bundle install --deployment --without development test mysql aws"
 
 # Install init scripts
 RUN cd /home/git/gitlab;\
@@ -81,7 +79,10 @@ RUN cd /home/git/gitlab;\
   chmod +x /etc/init.d/gitlab;\
   update-rc.d gitlab defaults 21
 
-EXPOSE 80
+RUN cd /home/git/gitlab;\
+  cp lib/support/logrotate/gitlab /etc/logrotate.d/gitlab
+
+EXPOSE 8080
 EXPOSE 22
 
 ADD . /srv/gitlab
