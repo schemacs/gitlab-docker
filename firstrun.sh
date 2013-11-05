@@ -53,4 +53,4 @@ sed -i -e 's/\/home\/git\/repositories/\/srv\/gitlab\/data\/repositories/g' /hom
 # ================================================================
 
 # Delete firstrun script
-rm /srv/gitlab/firstrun.sh
+#rm /srv/gitlab/firstrun.sh
