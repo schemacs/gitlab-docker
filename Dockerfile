@@ -1,24 +1,25 @@
 FROM ubuntu
 
-RUN apt-get update; apt-get -y install lsb-release
+RUN dpkg-divert --local --rename --add /sbin/initctl
+RUN ln -s /bin/true /sbin/initctl
+
+RUN apt-get update; apt-get -y install lsb-release python-software-properties
+
+# Add Sources
+RUN add-apt-repository -y ppa:git-core/ppa;\
+  echo deb http://us.archive.ubuntu.com/ubuntu/ $(lsb_release -cs) universe multiverse >> /etc/apt/sources.list;\
+  echo deb http://us.archive.ubuntu.com/ubuntu/ $(lsb_release -cs)-updates main restricted universe >> /etc/apt/sources.list;\
+  echo deb http://security.ubuntu.com/ubuntu $(lsb_release -cs)-security main restricted universe >> /etc/apt/sources.list
 
 # Run upgrades
-RUN echo deb http://us.archive.ubuntu.com/ubuntu/ $(lsb_release -cs) universe multiverse >> /etc/apt/sources.list;\
-  echo deb http://us.archive.ubuntu.com/ubuntu/ $(lsb_release -cs)-updates main restricted universe >> /etc/apt/sources.list;\
-  echo deb http://security.ubuntu.com/ubuntu $(lsb_release -cs)-security main restricted universe >> /etc/apt/sources.list;\
-  echo udev hold | dpkg --set-selections;\
+RUN  echo udev hold | dpkg --set-selections;\
   echo initscripts hold | dpkg --set-selections;\
   echo upstart hold | dpkg --set-selections;\
   apt-get update;\
   apt-get -y upgrade
 
 # Install dependencies
-RUN apt-get install -y -y build-essential zlib1g-dev libyaml-dev libssl-dev libgdbm-dev libreadline-dev libncurses5-dev libffi-dev curl git-core openssh-server redis-server checkinstall libxml2-dev libxslt-dev libcurl4-openssl-dev libicu-dev logrotate python-software-properties libpq-dev sudo 
-
-# Install Git
-RUN add-apt-repository -y ppa:git-core/ppa;\
-  apt-get update;\
-  apt-get -y install git
+RUN apt-get install -y build-essential zlib1g-dev libyaml-dev libssl-dev libgdbm-dev libreadline-dev libncurses5-dev libffi-dev curl git-core openssh-server redis-server checkinstall libxml2-dev libxslt-dev libcurl4-openssl-dev libicu-dev logrotate libpq-dev sudo git 
 
 # Install Ruby
 RUN mkdir /tmp/ruby;\
@@ -64,7 +65,7 @@ RUN cd /home/git/gitlab;\
   chmod -R u+rwX public/uploads;\
   su git -c "cp config/unicorn.rb.example config/unicorn.rb";\
   su git -c "cp config/initializers/rack_attack.rb.example config/initializers/rack_attack.rb";\
-  su git -c 'sed -e "s/# config.middleware.use Rack::Attack/config.middleware.use Rack::Attack/" config/application.rb';\
+  su git -c 'sed -ie "s/# config.middleware.use Rack::Attack/config.middleware.use Rack::Attack/" config/application.rb';\
   su git -c "git config --global user.name 'GitLab'";\
   su git -c "git config --global user.email 'gitlab@localhost'";\
   su git -c "git config --global core.autocrlf input"
