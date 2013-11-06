@@ -43,7 +43,7 @@ RUN cd /home/git;\
   cd gitlab-shell;\
   su git -c "git checkout v1.7.4";\
   su git -c "cp config.yml.example config.yml";\
-  sed -i -e 's/localhost/127.0.0.1/g' config.yml;\
+  sed -i -e 's/localhost/127.0.0.1:8080/g' config.yml;\
   su git -c "./bin/install"
 
 # Install GitLab
