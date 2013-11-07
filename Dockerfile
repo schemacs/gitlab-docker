@@ -5,7 +5,7 @@ ENV DEBIAN_FRONTEND noninteractive
 RUN dpkg-divert --local --rename --add /sbin/initctl
 RUN ln -s /bin/true /sbin/initctl
 
-RUN apt-get update; apt-get -y install lsb-release python-software-properties
+RUN apt-get update; apt-get -y install lsb-release software-properties-common
 
 # Add Sources
 RUN add-apt-repository -y ppa:git-core/ppa;\
