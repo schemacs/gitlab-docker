@@ -7,23 +7,23 @@ RUN ln -s /bin/true /sbin/initctl
 
 RUN apt-get update; apt-get -y install lsb-release software-properties-common
 
-# Add Sources
+# add sources
 RUN add-apt-repository -y ppa:git-core/ppa;\
   echo deb http://us.archive.ubuntu.com/ubuntu/ $(lsb_release -cs) universe multiverse >> /etc/apt/sources.list;\
   echo deb http://us.archive.ubuntu.com/ubuntu/ $(lsb_release -cs)-updates main restricted universe >> /etc/apt/sources.list;\
   echo deb http://security.ubuntu.com/ubuntu $(lsb_release -cs)-security main restricted universe >> /etc/apt/sources.list
 
-# Run upgrades
+# run upgrades
 RUN  echo udev hold | dpkg --set-selections;\
   echo initscripts hold | dpkg --set-selections;\
   echo upstart hold | dpkg --set-selections;\
   apt-get update;\
   apt-get -y upgrade
 
-# Install dependencies
+# install dependencies
 RUN apt-get install -y build-essential zlib1g-dev libyaml-dev libssl-dev libgdbm-dev libreadline-dev libncurses5-dev libffi-dev curl git-core openssh-server redis-server checkinstall libxml2-dev libxslt-dev libcurl4-openssl-dev libicu-dev logrotate libpq-dev sudo git 
 
-# Install Ruby
+# install Ruby
 RUN mkdir /tmp/ruby;\
   cd /tmp/ruby;\
   curl ftp://ftp.ruby-lang.org/pub/ruby/2.0/ruby-2.0.0-p247.tar.gz | tar xz;\
@@ -34,10 +34,10 @@ RUN mkdir /tmp/ruby;\
   make install;\
   gem install bundler --no-ri --no-rdoc
 
-# Create Git user
+# create git user
 RUN adduser --disabled-login --gecos 'GitLab' git
 
-# Install GitLab Shell
+# install gitlab shell
 RUN cd /home/git;\
   su git -c "git clone https://github.com/gitlabhq/gitlab-shell.git";\
   cd gitlab-shell;\
@@ -46,13 +46,13 @@ RUN cd /home/git;\
   sed -i -e 's/localhost/127.0.0.1:8080/g' config.yml;\
   su git -c "./bin/install"
 
-# Install GitLab
+# install Gitlab
 RUN cd /home/git;\
   su git -c "git clone https://github.com/gitlabhq/gitlabhq.git gitlab";\
   cd /home/git/gitlab;\
   su git -c "git checkout 6-2-stable"
 
-# Misc configuration stuff
+# misc configuration stuff
 RUN cd /home/git/gitlab;\
   chown -R git tmp/;\
   chown -R git log/;\
@@ -76,7 +76,7 @@ RUN cd /home/git/gitlab;\
   gem install charlock_holmes --version '0.6.9.4';\
   su git -c "bundle install --deployment --without development test mysql aws"
 
-# Install init scripts
+# install init scripts
 RUN cd /home/git/gitlab;\
   cp lib/support/init.d/gitlab /etc/init.d/gitlab;\
   chmod +x /etc/init.d/gitlab;\
@@ -85,12 +85,26 @@ RUN cd /home/git/gitlab;\
 RUN cd /home/git/gitlab;\
   cp lib/support/logrotate/gitlab /etc/logrotate.d/gitlab
 
-EXPOSE 8080
-EXPOSE 22
+# postgresql
+RUN apt-get install -y postgresql postgresql-client
+RUN ln -s /usr/lib/postgresql/9.1/bin/postgres /usr/local/bin/
 
+# nginx
+RUN apt-get install -y nginx
+
+# make config files available to container
 ADD . /srv/gitlab
 
-RUN chmod +x /srv/gitlab/start.sh;\
-  chmod +x /srv/gitlab/firstrun.sh
+# make scripts executable
+RUN chmod +x /srv/gitlab/start.sh; chmod +x /srv/gitlab/firstrun.sh
 
+# more setup is done in firstrun script
+RUN /srv/gitlab/firstrun.sh
+
+# expose http, https and ssh
+EXPOSE 80
+EXPOSE 443
+EXPOSE 22
+
+# when docker is invoked with 'docker run', start this command by default
 CMD ["/srv/gitlab/start.sh"]

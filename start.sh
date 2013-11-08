@@ -1,21 +1,26 @@
-#!/bin/bash
+#!/bin/bash -x
 
 # start SSH
 mkdir -p /var/run/sshd
-/usr/sbin/sshd
+/etc/init.d/ssh start
+
+# start nginx
+/etc/init.d/nginx start
+
+# start postgresql
+/etc/init.d/postgresql start
 
 # start redis
-redis-server > /dev/null 2>&1 &
-sleep 5
-
-# Run the firstrun script
-/srv/gitlab/firstrun.sh
+/etc/init.d/redis-server start
 
 # remove PIDs created by GitLab init script
-rm /home/git/gitlab/tmp/pids/*
+rm -f /home/git/gitlab/tmp/pids/*
 
 # start gitlab
 service gitlab start
+
+# display https certificate fingerprint
+openssl x509 -noout -in /etc/nginx/crypto/cert.pem -fingerprint -sha1
 
 # keep script in foreground
 tail -f /home/git/gitlab/log/production.log

@@ -8,8 +8,8 @@ production:
   pool: 5
   username: gitlab
   password: PASSWORD
-  host: HOSTNAME
-  port: PORT
+  host: localhost
+  port: 5432
 
 #
 # Development specific
@@ -21,8 +21,8 @@ development:
   pool: 5
   username: gitlab
   password: PASSWORD
-  host: HOSTNAME
-  port: PORT
+  host: localhost
+  port: 5432
 
 #
 # Staging specific
@@ -34,8 +34,8 @@ staging:
   pool: 5
   username: gitlab
   password: PASSWORD
-  host: HOSTNAME
-  port: PORT
+  host: localhost
+  port: 5432
 
 # Warning: The database defined as "test" will be erased and
 # re-generated from your development database when you run "rake".
@@ -47,5 +47,5 @@ test: &test
   pool: 5
   username: gitlab
   password: PASSWORD
-  host: HOSTNAME
-  port: PORT
+  host: localhost
+  port: 5432
